@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#141920">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VT SpotMaker">
+  <title>VT SpotMaker</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>VT SpotMaker</h1>
+    <div class="header-actions">
+      <button id="install-app" class="button compact subtle" type="button" hidden>インストール</button>
+      <span id="save-state" class="save-state">保存済み</span>
+      <button id="undo" class="icon-button" title="元に戻す (Ctrl/Cmd + Z)" aria-label="元に戻す" disabled>↶</button>
+      <button id="redo" class="icon-button" title="やり直す (Ctrl/Cmd + Shift + Z)" aria-label="やり直す" disabled>↷</button>
+      <button id="open-dat-dialog" class="button subtle">ファイルを開く</button>
+      <button id="preview-output" class="button subtle">内容を確認</button>
+      <button id="save-dat" class="button primary">保存</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="control-panel">
+      <section class="panel-section">
+        <h2>素材</h2>
+        <label class="button wide">ワールド画像を読み込む<input id="world-input" type="file" accept="image/*" hidden></label>
+        <p id="world-name" class="note">画像未選択</p>
+        <div class="material-list">
+          <div class="material-row">
+            <img id="spot-material-preview" src="./assets/default/spot.png" alt="">
+            <span><strong>スポット画像</strong><small id="spot-material-name">標準画像</small></span>
+            <label class="button subtle compact">変更<input id="spot-material-input" type="file" accept="image/*" hidden></label>
+          </div>
+          <div class="material-row">
+            <img id="route-material-preview" src="./assets/default/route.png" alt="">
+            <span><strong>通常連絡線</strong><small id="route-material-name">標準画像</small></span>
+            <label class="button subtle compact">変更<input id="route-material-input" type="file" accept="image/*" hidden></label>
+          </div>
+          <div class="material-row">
+            <img id="escape-material-preview" src="./assets/default/route_esc.png" alt="">
+            <span><strong>退却連絡線</strong><small id="escape-material-name">標準画像</small></span>
+            <label class="button subtle compact">変更<input id="escape-material-input" type="file" accept="image/*" hidden></label>
+          </div>
+        </div>
+        <button id="reset-materials" class="button subtle wide material-reset" type="button">標準に戻す</button>
+        <label class="range-label">
+          <span>線の太さ</span>
+          <output id="route-width-value">4px</output>
+        </label>
+        <input id="route-width" type="range" min="1" max="16" step="1" value="4">
+      </section>
+
+      <section class="panel-section">
+        <div class="section-heading">
+          <h2>スポット</h2>
+          <span id="spot-count">0件</span>
+        </div>
+        <input id="spot-search" type="search" placeholder="ID・表示名を検索">
+        <div id="spot-list" class="item-list"></div>
+      </section>
+
+      <section class="panel-section route-section">
+        <div class="section-heading">
+          <h2>連絡</h2>
+          <span id="route-count">0件</span>
+        </div>
+        <div id="route-list" class="item-list route-list"></div>
+      </section>
+
+      <details class="panel-section operation-guide">
+        <summary>操作方法</summary>
+        <dl class="shortcut-list">
+          <div><dt>左クリック</dt><dd>スポットを追加・選択</dd></div>
+          <div><dt>左ドラッグ</dt><dd>スポットを移動</dd></div>
+          <div><dt>右クリック</dt><dd>スポット・連絡を削除</dd></div>
+          <div><dt>Shift＋左クリック</dt><dd>通常連絡を作成</dd></div>
+          <div><dt>Ctrl＋左クリック</dt><dd>退却連絡を作成</dd></div>
+        </dl>
+      </details>
+    </aside>
+
+    <section class="map-stage">
+      <div class="stage-toolbar">
+        <span id="mode-label">直接操作</span>
+        <span id="selection-label">選択なし</span>
+        <button id="center-map" class="button compact subtle" title="マップの表示位置を中央に戻す">マップを中央に表示</button>
+      </div>
+      <div id="map-scroller" class="map-scroller">
+        <canvas id="map-canvas" width="1000" height="1000"></canvas>
+        <div id="empty-hint" class="empty-hint">ワールド画像を読み込むか、地図をクリックしてスポットを配置してください</div>
+      </div>
+      <div class="status-bar">
+        <span id="status">準備完了</span>
+        <span>右クリック: 削除 / Esc: 選択解除</span>
+      </div>
+    </section>
+
+    <aside class="property-panel">
+      <section class="panel-section">
+        <h2>スポット設定</h2>
+        <fieldset id="spot-fields" disabled>
+          <label>ID<input id="spot-id" type="text"></label>
+          <label>表示名<input id="spot-name" type="text"></label>
+          <label>画像
+            <select id="spot-image"><option value="spot">標準（spot）</option></select>
+          </label>
+          <label>継承<input id="spot-inherits" type="text"></label>
+          <div class="number-grid">
+            <label>X<input id="spot-x" type="number"></label>
+            <label>Y<input id="spot-y" type="number"></label>
+            <label>幅<input id="spot-w" type="number" min="1"></label>
+            <label>高さ<input id="spot-h" type="number" min="1"></label>
+          </div>
+          <label>その他の項目<textarea id="spot-extra" rows="8" placeholder="map = map01&#10;gain = 100"></textarea></label>
+          <button id="delete-spot" class="button danger wide" type="button">スポットを削除</button>
+        </fieldset>
+        <p id="no-selection" class="note">地図または一覧からスポットを選択してください。</p>
+      </section>
+
+    </aside>
+  </main>
+
+  <dialog id="dat-dialog" class="dat-dialog">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2>DATファイルを開く</h2>
+        <button class="icon-button" value="cancel" aria-label="閉じる">×</button>
+      </div>
+      <p class="dialog-note">編集するシナリオとスポットのDATファイルを選択してください。</p>
+      <div class="dat-file-picker">
+        <div>
+          <strong>scenario.datを選択</strong>
+          <span>スポット一覧・連絡線を読み込みます</span>
+          <label class="button subtle">
+            ファイルを選択
+            <input id="scenario-dat-input" type="file" accept=".dat,.txt,text/plain" hidden>
+          </label>
+          <output id="scenario-dat-name">未選択</output>
+        </div>
+        <div>
+          <strong>spot.datを選択</strong>
+          <span>名前・座標・画像設定を読み込みます</span>
+          <label class="button subtle">
+            ファイルを選択
+            <input id="spot-dat-input" type="file" accept=".dat,.txt,text/plain" hidden>
+          </label>
+          <output id="spot-dat-name">未選択</output>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="button subtle" value="cancel">キャンセル</button>
+        <button id="load-dat-files" class="button primary" type="button" disabled>読み込む</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="output-dialog">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2>出力内容</h2>
+        <button class="icon-button" value="cancel" aria-label="閉じる">×</button>
+      </div>
+      <div class="output-tabs">
+        <button id="show-scenario-output" type="button" class="output-tab active">シナリオDAT</button>
+        <button id="show-spot-output" type="button" class="output-tab">スポットDAT</button>
+      </div>
+      <textarea id="output-text" readonly></textarea>
+    </form>
+  </dialog>
+
+  <dialog id="validation-dialog" class="validation-dialog">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2 id="validation-title">入力内容を確認してください</h2>
+        <button class="icon-button" value="cancel" aria-label="閉じる">×</button>
+      </div>
+      <div id="validation-content" class="validation-content"></div>
+      <div class="dialog-actions">
+        <button class="button primary" value="cancel">閉じる</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="autosave-dialog" class="autosave-dialog">
+    <div class="dialog-heading">
+      <h2>前回の作業があります</h2>
+    </div>
+    <p class="dialog-note">ブラウザに自動保存された作業内容を復元しますか？</p>
+    <p id="autosave-dialog-date" class="autosave-date"></p>
+    <div class="dialog-actions">
+      <button id="discard-autosave" class="button subtle" type="button">削除して開始</button>
+      <button id="restore-autosave" class="button primary" type="button">復元する</button>
+    </div>
+  </dialog>
+
+  <dialog id="install-dialog" class="install-dialog">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2>アプリとして追加</h2>
+        <button class="icon-button" value="cancel" aria-label="閉じる">×</button>
+      </div>
+      <p id="install-instructions" class="dialog-note"></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="button primary">閉じる</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./vendor/encoding.min.js"></script>
+  <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/pwa.js"></script>
+</body>
+</html>
