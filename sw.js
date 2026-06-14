@@ -1,4 +1,4 @@
-const CACHE_NAME = "vt-spotmaker-shell-v2";
+const CACHE_NAME = "vt-spotmaker-shell-v6";
 const APP_SHELL = [
   "./",
   "./index.html",

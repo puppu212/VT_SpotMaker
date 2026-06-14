@@ -511,7 +511,7 @@ async function openDatFiles() {
     renderAll();
     markSaved();
     const suffix = combinedWarnings.length ? `（注意 ${combinedWarnings.length}件）` : "";
-    setStatus(`${files.length}個のDATを開きました${suffix}`, combinedWarnings.length > 0);
+    setStatus(`${files.length}個のDATを開きました${suffix}`, combinedWarnings.length > 0 ? "warning" : false);
     ui.dat_dialog.close();
     if (combinedWarnings.length) {
       showValidation("DATファイルを読み込みました", { errors: [], warnings: combinedWarnings });
@@ -604,7 +604,7 @@ function updateDocumentState() {
   ui.save_state.classList.toggle("unsaved", unsaved);
   ui.undo.disabled = !history.canUndo;
   ui.redo.disabled = !history.canRedo;
-  document.title = `${unsaved ? "● " : ""}VT SpotMaker`;
+  document.title = "VT SpotMaker";
   autosave.schedule();
 }
 
@@ -631,16 +631,22 @@ async function initializeAutosave() {
 }
 
 function askToRestoreAutosave(savedAt) {
-  ui.autosave_dialog_date.textContent = `保存日時: ${formatAutosaveDate(savedAt)}`;
+  ui.autosave_dialog_date.textContent = `自動保存: ${formatAutosaveDate(savedAt)}`;
   ui.autosave_dialog.showModal();
   return new Promise(resolve => {
     const finish = restore => {
       ui.autosave_dialog.close();
+      ui.autosave_dialog.onkeydown = null;
       resolve(restore);
     };
-    ui.restore_autosave.addEventListener("click", () => finish(true), { once: true });
-    ui.discard_autosave.addEventListener("click", () => finish(false), { once: true });
-    ui.autosave_dialog.addEventListener("cancel", event => event.preventDefault(), { once: true });
+    ui.restore_autosave.onclick = () => finish(true);
+    ui.discard_autosave.onclick = () => finish(false);
+    ui.autosave_dialog.onkeydown = event => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      finish(true);
+    };
+    ui.autosave_dialog.oncancel = event => event.preventDefault();
   });
 }
 
@@ -688,7 +694,6 @@ function formatAutosaveDate(value) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   }).format(date);
 }
 
@@ -740,7 +745,8 @@ function downloadBytes(filename, bytes) {
 
 function setStatus(message, error = false) {
   ui.status.textContent = message;
-  ui.status.style.color = error ? "#f18b96" : "";
+  ui.status.classList.toggle("error", error === true);
+  ui.status.classList.toggle("warning", error === "warning");
 }
 
 function escapeHtml(value) {

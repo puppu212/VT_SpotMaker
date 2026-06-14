@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#141920">
+  <meta name="theme-color" content="#171b22">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=5">
 </head>
 <body>
   <header class="app-header">
@@ -158,7 +158,7 @@
       </div>
       <div class="dialog-actions">
         <button class="button subtle" value="cancel">キャンセル</button>
-        <button id="load-dat-files" class="button primary" type="button" disabled>読み込む</button>
+        <button id="load-dat-files" class="button primary" type="button" disabled>開く</button>
       </div>
     </form>
   </dialog>
@@ -192,12 +192,12 @@
 
   <dialog id="autosave-dialog" class="autosave-dialog">
     <div class="dialog-heading">
-      <h2>前回の作業があります</h2>
+      <h2>前回の作業を復元しますか？</h2>
     </div>
-    <p class="dialog-note">ブラウザに自動保存された作業内容を復元しますか？</p>
+    <p class="dialog-note restore-description">このブラウザに自動保存された作業があります。</p>
     <p id="autosave-dialog-date" class="autosave-date"></p>
     <div class="dialog-actions">
-      <button id="discard-autosave" class="button subtle" type="button">削除して開始</button>
+      <button id="discard-autosave" class="button subtle" type="button">破棄して開始</button>
       <button id="restore-autosave" class="button primary" type="button">復元する</button>
     </div>
   </dialog>
