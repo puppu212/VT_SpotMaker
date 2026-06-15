@@ -1,6 +1,6 @@
 # VT SpotMaker
 
-SpotMakeHelper Ver1.2を参考にしたブラウザ版の試作です。
+ブラウザ上でスポットや連絡線を作成できる、VTオリシナ制作用のWebアプリです。
 
 ## 起動
 
