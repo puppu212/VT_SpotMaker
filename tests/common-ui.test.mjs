@@ -15,4 +15,6 @@ test("shared VT layout and terminology are applied", () => {
   assert.match(html, /id="load-dat-files"[^>]*>開く</);
   assert.match(app, /document\.title = "VT SpotMaker";/);
   assert.doesNotMatch(app, /document\.title\s*=\s*`[^`]*●/);
+  assert.match(css, /\.app-brand-icon\s*\{[^}]*width:\s*28px;/);
+  assert.match(html, /class="app-brand"[\s\S]*?src="\.\/icons\/icon\.svg"/);
 });
