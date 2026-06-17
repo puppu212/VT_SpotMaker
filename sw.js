@@ -1,4 +1,4 @@
-const CACHE_NAME = "vt-spotmaker-shell-v7";
+const CACHE_NAME = "vt-spotmaker-shell-v8";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "./src/pwa.js",
   "./src/scenario-source.js",
   "./src/validation.js",
+  "./src/zip-export.js",
   "./vendor/encoding.min.js"
 ];
 

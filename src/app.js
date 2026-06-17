@@ -8,6 +8,7 @@ import { createAutosaveManager } from "./autosave-manager.js";
 import { dataUrlToBlob, fileToDataUrl, loadImage } from "./media.js";
 import { createMaterialStore, MATERIAL_TYPES } from "./materials.js";
 import { renderMap } from "./map-renderer.js";
+import { createZip } from "./zip-export.js";
 
 const ui = Object.fromEntries([
   "map-canvas", "map-scroller", "world-input", "world-name",
@@ -548,10 +549,16 @@ function saveDatFiles() {
     showValidation("保存できません", validation);
     return;
   }
-  downloadShiftJis(scenarioFilename, scenarioText(project));
-  window.setTimeout(() => downloadShiftJis(spotFilename, spotText(project)), 150);
+  const scenarioBytes = encodeShiftJis(scenarioText(project));
+  const spotBytes = encodeShiftJis(spotText(project));
+  if (!scenarioBytes || !spotBytes) return;
+  const zipBytes = createZip([
+    { name: scenarioFilename, bytes: scenarioBytes },
+    { name: spotFilename, bytes: spotBytes },
+  ]);
+  downloadBytes("VT_SpotMaker_export.zip", zipBytes, "application/zip");
   markSaved();
-  setStatus(`${scenarioFilename} と ${spotFilename} を保存しました`);
+  setStatus(`${scenarioFilename} と ${spotFilename} をZIPで保存しました`);
   if (validation.warnings.length) {
     showValidation("保存しました（注意あり）", validation);
   }
@@ -721,10 +728,10 @@ function appendValidationGroup(title, messages, className) {
   ui.validation_content.append(section);
 }
 
-function downloadShiftJis(filename, text) {
+function encodeShiftJis(text) {
   if (!window.Encoding) {
     setStatus("Shift-JIS変換機能を読み込めませんでした", true);
-    return;
+    return null;
   }
   const unicode = window.Encoding.stringToCode(text);
   const bytes = window.Encoding.convert(unicode, {
@@ -732,12 +739,12 @@ function downloadShiftJis(filename, text) {
     from: "UNICODE",
     type: "array",
   });
-  downloadBytes(filename, new Uint8Array(bytes));
+  return new Uint8Array(bytes);
 }
 
-function downloadBytes(filename, bytes) {
+function downloadBytes(filename, bytes, type = "application/octet-stream") {
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
+  link.href = URL.createObjectURL(new Blob([bytes], { type }));
   link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
